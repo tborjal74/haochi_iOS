@@ -1,23 +1,34 @@
 import SwiftUI
+import Combine
 
 extension Color {
     static let appMaroon = Color(red: 0.5, green: 0.0, blue: 0.0)
+}
+
+final class CartManager: ObservableObject {
+    @Published var items: [Dish] = []
+
+    func add(dishTitle: String, subtitle: String, price: Decimal, imageName: String) {
+        let newDish = Dish(titleLocalized: dishTitle, subtitle: subtitle, price: price, imageName: imageName, tag: nil)
+        items.append(newDish)
+    }
 }
 
 struct HomeView: View {
     @State private var selectedCategory: Category = .steamed
     @State private var searchText: String = ""
     @State private var favourites: [Dish] = Dish.sample
+    @StateObject private var cart = CartManager()
 
     var body: some View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 0) {
                     header
-                    hero
                     categoryChips
                         .padding(.horizontal, 20)
                         .padding(.top, 16)
+                    hero
                     favouritesHeader
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
@@ -26,9 +37,11 @@ struct HomeView: View {
                         .padding(.bottom, 24)
                 }
             }
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+        }
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                NavigationLink(destination: ProfileView().environmentObject(cart)) {
                     HStack(spacing: 8) {
                         Image(systemName: "seal.fill")
                             .symbolRenderingMode(.palette)
@@ -41,33 +54,44 @@ struct HomeView: View {
                             HStack(spacing: 4) {
                                 Text("8 Lantern Lane")
                                     .font(.callout.weight(.semibold))
-                                Image(systemName: "chevron.down")
+                                Image(systemName: "chevron.right")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                         }
                     }
+                    .contentShape(Rectangle())
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(.trailing, 8)
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 12) {
-                        Button {
-                            // search action
-                        } label: {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundStyle(Color.appMaroon)
-                        }
-                        Button {
-                            // cart action
-                        } label: {
+                .buttonStyle(.plain)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 12) {
+                    Button {
+                        // search action
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(Color.appMaroon)
+                    }
+                    NavigationLink(destination: CartView().environmentObject(cart)) {
+                        ZStack(alignment: .topTrailing) {
                             Image(systemName: "cart")
                                 .foregroundStyle(Color.appMaroon)
+                            if cart.items.count > 0 {
+                                Circle()
+                                    .fill(Color.appMaroon)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 6, y: -6)
+                            }
                         }
                     }
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .safeAreaPadding(.bottom, 8)
         }
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaPadding(.bottom, 8)
+        .environmentObject(cart)
     }
 
     // MARK: Header hero
@@ -86,23 +110,9 @@ struct HomeView: View {
                 .overlay {
                     LinearGradient(colors: [Color.black.opacity(0.0), Color.black.opacity(0.35)], startPoint: .center, endPoint: .bottom)
                 }
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Chip(text: "STEAMED", style: .filled)
-                    Chip(text: "MOM'S", style: .outline)
-                }
-                .padding(.bottom, 4)
-                Text("Good fortune,\none bite at a\ntime.")
-                    .font(.system(size: 34, weight: .semibold, design: .serif))
-                    .foregroundStyle(.white)
-                    .lineSpacing(2)
-                HStack(spacing: 12) {
-                    CategoryBadge(icon: "seal", text: "點心")
-                }
-                .padding(.top, 6)
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 16)
+            VStack { EmptyView() }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
         }
         .background(.ultraThinMaterial)
     }
@@ -215,6 +225,8 @@ private struct CategoryBadge: View {
 private struct DishCard: View {
     var dish: Dish
 
+    @EnvironmentObject private var cart: CartManager
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             ZStack(alignment: .topLeading) {
@@ -251,7 +263,7 @@ private struct DishCard: View {
                 HStack {
                     Spacer()
                     Button {
-                        // add to cart
+                        cart.add(dishTitle: dish.titleLocalized, subtitle: dish.subtitle, price: dish.price, imageName: dish.imageName)
                     } label: {
                         Image(systemName: "plus")
                             .font(.headline.weight(.bold))
@@ -306,5 +318,6 @@ private struct Dish: Identifiable, Hashable {
 #Preview("HomeView") {
     NavigationStack {
         HomeView()
+            .environmentObject(CartManager())
     }
 }

@@ -14,6 +14,9 @@
     { "kind": "folder", "path": "first_project", "target-membership": [ "first_project" ] },
     { "path": "LoginView.swift", "target-membership": [ "first_project/compile-sources" ] },
     { "path": "HomeView.swift", "target-membership": [ "first_project/compile-sources" ] },
+    { "path": "CartView.swift", "target-membership": [ "first_project/compile-sources" ] },
+    { "path": "CheckoutView.swift", "target-membership": [ "first_project/compile-sources" ] },
+    { "path": "ProfileView.swift", "target-membership": [ "first_project/compile-sources" ] },
     {
       "kind": "group",
       "name": "Products",
